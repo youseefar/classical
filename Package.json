@@ -1,0 +1,39 @@
+{
+  "name": "fitarena",
+  "version": "1.0.0",
+  "description": "Gym and Football 5-A-Side Arena Booking System",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "aos": "^2.3.4",
+    "axios": "^0.27.2",
+    "bcryptjs": "^2.4.3",
+    "chart.js": "^4.5.0",
+    "connect-flash": "^0.1.1",
+    "connect-mongo": "^5.1.0",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "date-fns": "^2.28.0",
+    "dotenv": "^16.0.1",
+    "ejs": "^3.1.8",
+    "express": "^4.18.1",
+    "express-ejs-layouts": "^2.5.1",
+    "express-rate-limit": "^7.5.1",
+    "express-session": "^1.17.3",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
+    "mongoose": "^6.3.4",
+    "multer": "^2.0.1",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "paystack": "^2.0.1",
+    "paystack-api": "^2.0.6"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  }
+}

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Dashboard - Classical' }) %>
+  <style>
+    .booking-card {
+      transition: all 0.3s ease;
+      border-top: 3px solid;
+    }
+    .booking-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .gym-card { border-color: #3B82F6; }
+    .arena-card { border-color: #10B981; }
+    .countdown {
+      font-family: monospace;
+      background: #F3F4F6;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    #paymentChecking {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .payment-checking-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <%- include('../partials/header') %>
+
+  <!-- Payment Checking Modal -->
+  <div id="paymentChecking">
+    <div class="payment-checking-content">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+      <h3 class="text-lg font-medium mb-2">Checking Payment Status</h3>
+      <p class="text-gray-600">Please wait while we verify your payment...</p>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-8">
+    <!-- Welcome Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+      <h1 class="text-2xl font-bold mb-2">Welcome, <%= user.firstName %>!</h1>
+      <p class="text-gray-600">Manage your gym and arena bookings</p>
+    </div>
+
+    <!-- Active Memberships Section -->
+    <div class="mb-8">
+      <h2 class="text-xl font-bold mb-4">Your Active Memberships</h2>
+      
+      <% if (user.activeMemberships && user.activeMemberships.length > 0) { %>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <% user.activeMemberships.forEach(membership => { %>
+            <div class="booking-card gym-card bg-white rounded-lg p-6">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="font-bold text-lg mb-1">Gym Membership</h3>
+                  <p class="text-gray-600 mb-2">
+                    <%= membership.type === 'monthly' ? 'Monthly Plan' : 'Weekly Plan' %>
+                  </p>
+                  <div class="flex items-center text-sm">
+                    <span class="text-gray-500 mr-2">Expires:</span>
+                    <span class="font-medium"><%= new Date(membership.expiresAt).toLocaleDateString() %></span>
+                  </div>
+                </div>
+                <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  Active
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <p class="text-yellow-700">You don't have any active gym memberships</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Arena Bookings Section -->
+    <div class="mb-8">
+      <h2 class="text-xl font-bold mb-4">Your Arena Bookings</h2>
+      
+      <% if (user.arenaBookings && user.arenaBookings.length > 0) { %>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <% user.arenaBookings.forEach(booking => { %>
+            <div class="booking-card arena-card bg-white rounded-lg p-6">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="font-bold text-lg mb-1">Pitch Booking</h3>
+                  <p class="text-gray-600 mb-2">
+                    <%= booking.duration %> hour(s) - <%= booking.timeSlot %>
+                  </p>
+                  <div class="flex items-center text-sm">
+                    <span class="text-gray-500 mr-2">Date:</span>
+                    <span class="font-medium"><%= new Date(booking.date).toLocaleDateString() %></span>
+                  </div>
+                  <div class="mt-2">
+                    <span class="countdown">
+                      <% if (new Date(booking.date) > new Date()) { %>
+                        <%= Math.floor((new Date(booking.date) - new Date()) / (1000 * 60 * 60 * 24)) %> days left
+                      <% } else { %>
+                        Completed
+                      <% } %>
+                    </span>
+                  </div>
+                </div>
+                <div class="text-green-800 font-medium">
+                  ₦<%= booking.amount.toLocaleString('en-NG') %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+          <p class="text-blue-700">You don't have any arena bookings yet</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Gym Booking -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <h3 class="font-bold text-lg mb-4">Book Gym Membership</h3>
+        <form id="gymBookingForm">
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Membership Type</label>
+            <select name="type" class="w-full px-4 py-2 border rounded-lg" required>
+              <option value="weekly">Weekly - ₦7,500</option>
+              <option value="monthly">Monthly - ₦25,000</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg">
+            Proceed to Payment
+          </button>
+        </form>
+      </div>
+
+      <!-- Arena Booking -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <h3 class="font-bold text-lg mb-4">Book Football Pitch</h3>
+        <form id="arenaBookingForm">
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Date</label>
+            <input type="date" name="date" class="w-full px-4 py-2 border rounded-lg" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Duration (hours)</label>
+            <select name="duration" class="w-full px-4 py-2 border rounded-lg" required>
+              <option value="1">1 hour (₦15,000)</option>
+              <option value="2">2 hours (₦28,000)</option>
+              <option value="3">3 hours (₦40,000)</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Time Slot</label>
+            <select name="timeSlot" class="w-full px-4 py-2 border rounded-lg" required>
+              <option value="07:00-09:00">7:00 AM - 9:00 AM</option>
+              <option value="09:00-11:00">9:00 AM - 11:00 AM</option>
+              <option value="11:00-13:00">11:00 AM - 1:00 PM</option>
+              <option value="13:00-15:00">1:00 PM - 3:00 PM</option>
+              <option value="15:00-17:00">3:00 PM - 5:00 PM</option>
+              <option value="17:00-19:00">5:00 PM - 7:00 PM</option>
+              <option value="19:00-21:00">7:00 PM - 9:00 PM</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg">
+            Proceed to Payment
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    // Handle Gym Booking
+    document.getElementById('gymBookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Processing...';
+
+      try {
+        const formData = new FormData(form);
+        const response = await fetch('/bookings/gym', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: formData.get('type')
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.authorizationUrl) {
+          // Show payment checking modal
+          document.getElementById('paymentChecking').style.display = 'flex';
+          
+          // Open Paystack in new tab
+          const paystackWindow = window.open(result.authorizationUrl, '_blank');
+          
+          // Check payment status every 3 seconds
+          const checkPayment = setInterval(async () => {
+            try {
+              const statusResponse = await fetch('/bookings/status');
+              const status = await statusResponse.json();
+              
+              if (status.paid) {
+                clearInterval(checkPayment);
+                document.getElementById('paymentChecking').style.display = 'none';
+                window.location.href = '/dashboard?payment=success';
+              }
+            } catch (error) {
+              console.error('Status check error:', error);
+            }
+          }, 3000);
+          
+          // Fallback if user closes Paystack tab
+          paystackWindow.onbeforeunload = () => {
+            document.getElementById('paymentChecking').style.display = 'none';
+            window.location.reload();
+          };
+        } else {
+          alert('Booking failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred during booking');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Proceed to Payment';
+      }
+    });
+
+    // Handle Arena Booking (similar to gym booking)
+    document.getElementById('arenaBookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Processing...';
+
+      try {
+        const formData = new FormData(form);
+        const response = await fetch('/bookings/arena', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            date: formData.get('date'),
+            duration: parseInt(formData.get('duration')),
+            timeSlot: formData.get('timeSlot')
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.authorizationUrl) {
+          document.getElementById('paymentChecking').style.display = 'flex';
+          const paystackWindow = window.open(result.authorizationUrl, '_blank');
+          
+          const checkPayment = setInterval(async () => {
+            try {
+              const statusResponse = await fetch('/bookings/status');
+              const status = await statusResponse.json();
+              
+              if (status.paid) {
+                clearInterval(checkPayment);
+                document.getElementById('paymentChecking').style.display = 'none';
+                window.location.href = '/dashboard?payment=success';
+              }
+            } catch (error) {
+              console.error('Status check error:', error);
+            }
+          }, 3000);
+          
+          paystackWindow.onbeforeunload = () => {
+            document.getElementById('paymentChecking').style.display = 'none';
+            window.location.reload();
+          };
+        } else {
+          alert('Booking failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred during booking');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Proceed to Payment';
+      }
+    });
+
+    // Handle payment success message
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      alert('Payment was successful! Your booking is now active.');
+      // Remove the query parameter from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  </script>
+</body>
+</html>

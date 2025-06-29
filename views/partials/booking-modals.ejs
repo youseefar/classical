@@ -1,0 +1,122 @@
+<!-- Gym Booking Modal -->
+<div id="gymModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-bold">Book Gym Membership</h3>
+      <button onclick="closeModal('gymModal')" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <form id="gymBookingForm" onsubmit="event.preventDefault(); handleBooking('gymBookingForm', 'gym')">
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">Membership Type</label>
+        <select name="duration" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+          <option value="weekly">Weekly (₦7,500)</option>
+          <option value="monthly">Monthly (₦25,000)</option>
+        </select>
+      </div>
+      
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">Start Date</label>
+        <input type="date" name="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="<%= new Date().toISOString().split('T')[0] %>" required>
+      </div>
+      
+      <div class="bg-blue-50 p-4 rounded-lg mb-6">
+        <h4 class="font-bold mb-2">Payment Summary</h4>
+        <div class="flex justify-between">
+          <span>Membership:</span>
+          <span id="gymAmount">₦7,500</span>
+        </div>
+        <div class="flex justify-between font-bold mt-2">
+          <span>Total:</span>
+          <span id="gymTotal">₦7,500</span>
+        </div>
+      </div>
+      
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors">
+        Proceed to Payment
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Football Booking Modal -->
+<div id="footballModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-bold">Book Football Pitch</h3>
+      <button onclick="closeModal('footballModal')" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <form id="footballBookingForm" onsubmit="event.preventDefault(); handleBooking('footballBookingForm', 'football')">
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">Date</label>
+        <input type="date" name="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" min="<%= new Date().toISOString().split('T')[0] %>" required>
+      </div>
+      
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">Time Slot</label>
+        <select name="timeSlot" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+          <option value="">Select time</option>
+          <option value="07:00-09:00">7:00 AM - 9:00 AM</option>
+          <option value="09:00-11:00">9:00 AM - 11:00 AM</option>
+          <option value="11:00-13:00">11:00 AM - 1:00 PM</option>
+          <option value="13:00-15:00">1:00 PM - 3:00 PM</option>
+          <option value="15:00-17:00">3:00 PM - 5:00 PM</option>
+          <option value="17:00-19:00">5:00 PM - 7:00 PM</option>
+          <option value="19:00-21:00">7:00 PM - 9:00 PM</option>
+        </select>
+      </div>
+      
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">Duration (hours)</label>
+        <select name="duration" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" id="durationSelect" required>
+          <option value="1">1 hour (₦15,000)</option>
+          <option value="2">2 hours (₦28,000)</option>
+          <option value="3">3 hours (₦40,000)</option>
+        </select>
+      </div>
+      
+      <div class="bg-green-50 p-4 rounded-lg mb-6">
+        <h4 class="font-bold mb-2">Payment Summary</h4>
+        <div class="flex justify-between">
+          <span>Pitch Booking:</span>
+          <span id="footballAmount">₦15,000</span>
+        </div>
+        <div class="flex justify-between font-bold mt-2">
+          <span>Total:</span>
+          <span id="footballTotal">₦15,000</span>
+        </div>
+      </div>
+      
+      <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors">
+        Proceed to Payment
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Dynamic pricing for football booking
+  document.getElementById('durationSelect')?.addEventListener('change', function(e) {
+    const hours = parseInt(e.target.value);
+    let amount = 15000 * hours;
+    
+    // Apply discounts
+    if (hours === 2) amount = 28000;
+    if (hours >= 3) amount = 40000;
+    
+    document.getElementById('footballAmount').textContent = `₦${amount.toLocaleString('en-NG')}`;
+    document.getElementById('footballTotal').textContent = `₦${amount.toLocaleString('en-NG')}`;
+  });
+
+  // Dynamic pricing for gym booking
+  document.querySelector('#gymBookingForm select[name="duration"]')?.addEventListener('change', function(e) {
+    const amount = e.target.value === 'weekly' ? 7500 : 25000;
+    document.getElementById('gymAmount').textContent = `₦${amount.toLocaleString('en-NG')}`;
+    document.getElementById('gymTotal').textContent = `₦${amount.toLocaleString('en-NG')}`;
+  });
+</script>
