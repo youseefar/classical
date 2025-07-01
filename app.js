@@ -11,35 +11,45 @@ const bookingRoutes = require('./routes/bookings');
 // Initialize app
 const app = express();
 
-// Database connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB Atlas connected'))
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
-});
-// Passport config
+// Database connection (with improved error handling)
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB Atlas connected');
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  }
+};
+connectDB();
+
+// Passport config (single initialization)
 require('./config/passport')(passport);
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-// Make sure these exist in your app.js
-app.use(express.static(path.join(__dirname, 'public'))); // Serve static files
-app.set('view engine', 'ejs'); // Set EJS as view engine
-app.set('views', path.join(__dirname, 'views')); // Set views directory
+app.use(express.static(path.join(__dirname, 'public'))); // Static files
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
-// Session middleware
+// Session config (optimized for serverless)
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 day
+    store: MongoStore.create({ 
+      mongoUrl: process.env.MONGO_URI,
+      ttl: 24 * 60 * 60 // 1 day in seconds
+    }),
+    cookie: { 
+      maxAge: 1000 * 60 * 60 * 24,
+      sameSite: 'lax' // Recommended for Vercel
+    }
   })
 );
 
@@ -47,38 +57,44 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Make sure this line exists
-require('./config/passport')(passport);
-
 // Global variables
 app.use((req, res, next) => {
   res.locals.user = req.user || null;
   next();
 });
 
-// Routes
-app.use('/', authRoutes);;
+// Routes (deduplicated)
+app.use('/', authRoutes);
 app.use('/bookings', bookingRoutes);
+app.use('/', require('./routes/index'));
 
-// ... (previous code remains the same)
+// Request logger (simplified)
 app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
+  console.log(`${req.method} ${req.path}`);
   next();
 });
-// Routes
-app.use('/', require('./routes/index'));
-// Add this after your routes
+
+// Error handling
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).send('Something broke!');
+  console.error(err.stack);
+  res.status(500).render('error', { 
+    message: 'Something broke!',
+    user: req.user 
+  });
 });
 
-// 404 Page - Update this part
+// 404 Handler
 app.use((req, res) => {
   res.status(404).render('404', { user: req.user });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Vercel-compatible export
+module.exports = app;
+
+// Local development server
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Local server: http://localhost:${PORT}`);
+  });
+}
